@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Hidden Gems Singapore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      /* Custom scrollbar for webkit */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #18181b; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3f3f46; 
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #52525b; 
+      }
+      
+      /* Hide leaflet attribution prefix if desired for cleaner UI, 
+         but we keep copyright for legal reasons usually. 
+         Making it small and dark for this theme. */
+      .leaflet-control-attribution {
+        background: rgba(0,0,0,0.5) !important;
+        color: #71717a !important;
+        font-size: 10px;
+      }
+      .leaflet-control-attribution a {
+        color: #a1a1aa !important;
+      }
+
+      /* Invert standard OSM tiles to create a detailed dark mode map */
+      .dark-tiles {
+        filter: invert(100%) hue-rotate(180deg) brightness(80%) contrast(90%) saturate(60%);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@^5.0.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.0.0",
+    "leaflet": "https://esm.sh/leaflet@^1.9.4",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+</head>
+  <body class="bg-zinc-950 text-white overflow-hidden">
+    <div id="root" class="h-screen w-screen relative overflow-hidden"></div>
+  </body>
+</html>
