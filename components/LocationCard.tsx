@@ -129,6 +129,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onClose, o
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       onRemove(location.id);
                     }}
                     className="p-2 bg-black/40 hover:bg-rose-900/80 text-white/80 hover:text-rose-200 rounded-full backdrop-blur-sm transition-colors"

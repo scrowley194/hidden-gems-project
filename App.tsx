@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, MessageSquare, List, Loader2 } from 'lucide-react';
 import { Location, Coordinate, PlaceType } from './types';
 import { MOCK_LOCATIONS, INITIAL_VIEW_STATE } from './constants';
@@ -23,6 +23,18 @@ const App = () => {
   const [currentMapCenter, setCurrentMapCenter] = useState<Coordinate>(INITIAL_VIEW_STATE.center);
   const [draftLocation, setDraftLocation] = useState<Partial<Location> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Safety cleanup: ensure body styles are reset when no modals are open
+  // This fixes issues where Framer Motion drags might leave cursor/select styles on body
+  useEffect(() => {
+    if (!isListOpen && !isAddModalOpen && !isChatOpen) {
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        document.body.style.pointerEvents = '';
+        // Ensure overflow is correct for standard viewing
+        document.body.style.overflow = 'hidden'; 
+    }
+  }, [isListOpen, isAddModalOpen, isChatOpen]);
 
   // Filter locations based on search query (local filter)
   const filteredLocations = useMemo(() => {
@@ -60,10 +72,8 @@ const App = () => {
     // 1. Check if it's a saved location
     const isSaved = locations.some(l => l.id === id);
     if (isSaved) {
-        if (window.confirm('Are you sure you want to remove this location from your map?')) {
-            setLocations(prev => prev.filter(l => l.id !== id));
-            if (selectedLocationId === id) setSelectedLocationId(null);
-        }
+        setLocations(prev => prev.filter(l => l.id !== id));
+        if (selectedLocationId === id) setSelectedLocationId(null);
         return;
     }
 

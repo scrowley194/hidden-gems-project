@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Location, PlaceType, Category } from '../types';
 import { X, CheckCircle2, Circle, MapPin, Utensils, Coffee, Martini, Ticket, HelpCircle, GripVertical, Filter, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -55,6 +55,7 @@ const ListItemContent: React.FC<ListItemContentProps> = ({ location, onSelectLoc
 
     <button 
       onClick={(e) => { e.stopPropagation(); onSelectLocation(location); }}
+      onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
       className="p-2 text-zinc-600 hover:text-sky-400 transition-colors relative z-10"
       title="View on Map"
     >
@@ -64,8 +65,11 @@ const ListItemContent: React.FC<ListItemContentProps> = ({ location, onSelectLoc
     <button 
       onClick={(e) => {
         e.stopPropagation();
-        onRemove(location.id);
+        e.preventDefault();
+        // Defer removal slightly to ensure events clear
+        setTimeout(() => onRemove(location.id), 0);
       }}
+      onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
       className="p-2 text-zinc-600 hover:text-rose-400 transition-colors relative z-10"
       title="Remove"
     >
@@ -87,13 +91,17 @@ const SortableLocationItem: React.FC<SortableLocationItemProps> = ({ location, o
   return (
     <Reorder.Item 
       value={location}
-      dragListener={false} // Disable default drag listener on the whole item
+      dragListener={false} 
       dragControls={dragControls}
       className="group flex items-center gap-3 p-3 rounded-xl bg-zinc-950 hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-800 cursor-default"
+      onPointerDown={(e) => e.stopPropagation()} 
     >
       <div 
         className="text-zinc-700 hover:text-zinc-500 cursor-grab active:cursor-grabbing p-1 touch-none"
-        onPointerDown={(e) => dragControls.start(e)}
+        onPointerDown={(e) => {
+            e.preventDefault(); 
+            dragControls.start(e);
+        }}
       >
         <GripVertical size={16} />
       </div>
@@ -103,6 +111,7 @@ const SortableLocationItem: React.FC<SortableLocationItemProps> = ({ location, o
           e.stopPropagation();
           onToggleVisited(location.id);
         }}
+        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
         className="text-zinc-600 hover:text-emerald-500 transition-colors relative z-10"
       >
         <Circle size={20} />
@@ -116,6 +125,15 @@ const SortableLocationItem: React.FC<SortableLocationItemProps> = ({ location, o
 export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, onToggleVisited, onSelectLocation, onReorder, onRemove }) => {
   const [activeTypes, setActiveTypes] = useState<PlaceType[]>([]);
   const [activeCategories, setActiveCategories] = useState<Category[]>([]);
+
+  // Explicit cleanup of body styles to prevent stuck cursors
+  useEffect(() => {
+    if (!isOpen) {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.body.style.pointerEvents = '';
+    }
+  }, [isOpen]);
 
   const toVisit = locations.filter(l => !l.visited);
   const visited = locations.filter(l => l.visited);
@@ -137,7 +155,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
   });
 
   const handleReorder = (newOrder: Location[]) => {
-      // Reconstruct full list: newOrder + hidden toVisit + visited
       if (!isFiltered) {
           const newLocations = [...newOrder, ...visited];
           onReorder(newLocations);
@@ -145,20 +162,23 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop with pointerEvents: none on exit to prevent blocking */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
             className="absolute inset-0 bg-black/60 z-[1500] backdrop-blur-sm"
           />
           
           {/* Drawer */}
           <motion.div
+            key="drawer"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -181,7 +201,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
                     <span className="text-xs font-bold uppercase">Filters</span>
                  </div>
                  
-                 {/* Categories */}
                  {(['Hidden Gem', 'Tourist Trap'] as Category[]).map(cat => (
                     <button
                         key={cat}
@@ -200,7 +219,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
 
                  <div className="w-px h-4 bg-zinc-800 mx-1"></div>
 
-                 {/* Types */}
                  {(['Restaurant', 'Bar', 'Cafe', 'Activity', 'Other'] as PlaceType[]).map(type => (
                     <button
                         key={type}
@@ -220,7 +238,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
             {/* List Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-8">
               
-              {/* To Visit Section */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center pl-2 pr-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">To Visit ({displayToVisit.length})</h3>
@@ -232,7 +249,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
                     {isFiltered ? "No places match filters." : "All caught up! Add more places."}
                   </div>
                 ) : isFiltered ? (
-                    // Render simple list when filtered (No Drag)
                     displayToVisit.map(location => (
                         <div 
                           key={location.id}
@@ -251,7 +267,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
                         </div>
                     ))
                 ) : (
-                    // Render Reorder list when not filtered
                     <Reorder.Group axis="y" values={displayToVisit} onReorder={handleReorder} className="space-y-2">
                         {displayToVisit.map(location => (
                             <SortableLocationItem 
@@ -266,7 +281,6 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
                 )}
               </div>
 
-              {/* Visited Section (Always visible, filtered if needed) */}
               {visited.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 pl-2">visited ({visited.length})</h3>
@@ -300,8 +314,10 @@ export const ListView: React.FC<ListViewProps> = ({ isOpen, onClose, locations, 
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          onRemove(location.id);
+                          e.preventDefault();
+                          setTimeout(() => onRemove(location.id), 0);
                         }}
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                         className="p-2 text-zinc-500 hover:text-rose-400 transition-colors"
                         title="Remove"
                       >
