@@ -11,7 +11,17 @@ import { ListView } from './components/ListView';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const App = () => {
-  const [locations, setLocations] = useState<Location[]>(MOCK_LOCATIONS);
+  // Initialize locations from localStorage to persist data
+  const [locations, setLocations] = useState<Location[]>(() => {
+    try {
+      const saved = localStorage.getItem('hidden_gems_locations');
+      return saved ? JSON.parse(saved) : MOCK_LOCATIONS;
+    } catch (error) {
+      console.error('Error loading locations from localStorage:', error);
+      return MOCK_LOCATIONS;
+    }
+  });
+
   const [suggestedLocations, setSuggestedLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +33,15 @@ const App = () => {
   const [currentMapCenter, setCurrentMapCenter] = useState<Coordinate>(INITIAL_VIEW_STATE.center);
   const [draftLocation, setDraftLocation] = useState<Partial<Location> | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Persist locations to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('hidden_gems_locations', JSON.stringify(locations));
+    } catch (error) {
+      console.error('Error saving locations to localStorage:', error);
+    }
+  }, [locations]);
 
   // Safety cleanup: ensure body styles are reset when no modals are open
   // This fixes issues where Framer Motion drags might leave cursor/select styles on body
